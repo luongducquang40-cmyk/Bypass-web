@@ -1,8 +1,5 @@
-// Sử dụng API bypass công cộng
-const API_URLS = [
-    "https://api.bypass.city/bypass?url=",
-    "https://api.bypass.vip/bypass?url="
-];
+// Sử dụng API miễn phí không cần key từ iwoozie.baby
+const API_URL = "https://iwoozie.baby/api/bypass?url=";
 
 async function startBypass() {
     const urlInput = document.getElementById("urlInput").value.trim();
@@ -13,40 +10,71 @@ async function startBypass() {
     let success = false;
     let realLink = "";
 
-    // Thử từng API
-    for (let api of API_URLS) {
-        try {
-            const response = await fetch(api + encodeURIComponent(urlInput));
-            if (response.ok) {
-                const data = await response.json();
-                // Tùy API trả về result hoặc url
-                if (data.status === "success" || data.success === true) {
-                    realLink = data.result || data.url;
-                    success = true;
-                    break;
-                }
+    try {
+        // Gọi API bypass
+        const response = await fetch(API_URL + encodeURIComponent(urlInput), {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
             }
-        } catch (e) {
-            console.log("API lỗi, thử cái tiếp theo...");
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            // Kiểm tra cấu trúc trả về (có thể là result, url, hoặc destination)
+            if (data.result) {
+                realLink = data.result;
+                success = true;
+            } else if (data.url) {
+                realLink = data.url;
+                success = true;
+            } else if (data.destination) {
+                realLink = data.destination;
+                success = true;
+            } else if (typeof data === 'string' && data.startsWith('http')) {
+                realLink = data;
+                success = true;
+            }
         }
+    } catch (e) {
+        console.log("API lỗi:", e);
     }
 
-    // Nếu không API nào chạy được, trả về link gốc (fallback)
-    if (!success) {
-        // Thử lấy link nếu người dùng nhập sai (link gốc không qua rút gọn)
-        if (urlInput.startsWith("http")) {
-             realLink = urlInput + " (Không thể vượt qua tự động, có thể đây là link gốc)";
-             success = true;
-        }
+    // Fallback: Nếu API không trả về, thử dùng phương pháp Scraping cơ bản (nếu link là link4m/link1s)
+    if (!success && (urlInput.includes('link4m') || urlInput.includes('link1s'))) {
+        realLink = await fallbackScrape(urlInput);
+        if (realLink) success = true;
     }
 
     toggleUI(false);
 
-    if (success) {
+    if (success && realLink) {
         showResult(realLink);
     } else {
         showError();
     }
+}
+
+// Hàm dự phòng cho một số trang rút gọn đơn giản
+async function fallbackScrape(url) {
+    try {
+        // Sử dụng một proxy CORS công cộng để lấy HTML
+        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+        const res = await fetch(proxyUrl);
+        const html = await res.text();
+        
+        // Tìm link trong thẻ meta refresh
+        const metaMatch = html.match(/http-equiv=["']refresh["'][^>]*content=["'][^"']*url=([^"']+)/i);
+        if (metaMatch) return metaMatch[1];
+
+        // Tìm link trong các thẻ a có chứa download/get link
+        const linkMatch = html.match(/<a[^>]*href=["'](https?:\/\/[^"']+)["'][^>]*>.*?(?:download|get link|tải)/i);
+        if (linkMatch) return linkMatch[1];
+
+    } catch (e) {
+        console.log("Fallback lỗi:", e);
+    }
+    return null;
 }
 
 function toggleUI(isLoading) {
@@ -74,7 +102,7 @@ function showResult(link) {
     document.getElementById("realLink").value = link;
     
     const dlBtn = document.getElementById("downloadBtn");
-    if (link.startsWith("http") && !link.includes("Không thể")) {
+    if (link.startsWith("http")) {
         dlBtn.href = link;
         dlBtn.classList.remove("hidden");
     } else {
