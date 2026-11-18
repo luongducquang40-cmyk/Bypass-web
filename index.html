@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Bypass Tool</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Font chữ Cyber -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="glass-panel">
+            <h1>BYPASS <span>LINK</span></h1>
+            <p class="subtitle">Vượt qua mọi rào cản, lấy link trực tiếp</p>
+            
+            <div class="input-group">
+                <input type="text" id="urlInput" placeholder="Dán link rút gọn vào đây..." autocomplete="off">
+                <button id="bypassBtn" onclick="startBypass()">
+                    <span id="btnText">VƯỢT LINK</span>
+                    <div id="loader" class="hidden"></div>
+                </button>
+            </div>
+
+            <div id="resultBox" class="hidden">
+                <p class="label">Link gốc của bạn:</p>
+                <div class="link-display">
+                    <input type="text" id="realLink" readonly>
+                    <button onclick="copyLink()" id="copyBtn">COPY</button>
+                </div>
+                <a id="downloadBtn" href="#" target="_blank" class="download-btn hidden">MỞ LINK NGAY</a>
+            </div>
+
+            <div id="errorBox" class="hidden error">
+                Lỗi: Không thể vượt link này. Hãy thử lại hoặc dùng API khác.
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
